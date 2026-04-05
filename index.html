@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Application Tracker Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .status-badge { @apply px-2 py-1 rounded-full text-xs font-semibold; }
+        .status-applied { @apply bg-blue-100 text-blue-800; }
+        .status-screening { @apply bg-yellow-100 text-yellow-800; }
+        .status-interview { @apply bg-purple-100 text-purple-800; }
+        .status-offer { @apply bg-green-100 text-green-800; }
+        .status-rejected { @apply bg-red-100 text-red-800; }
+        .tab-active { @apply border-b-2 border-blue-600 text-blue-600; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="app" class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">Job Application Tracker</h1>
+                <p class="text-gray-600">Managing your path to success</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="exportCSV()" class="bg-white border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                    <i class="fas fa-file-export"></i> Export CSV
+                </button>
+                <label class="bg-white border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 cursor-pointer flex items-center gap-2">
+                    <i class="fas fa-file-import"></i> Import CSV
+                    <input type="file" id="csvImport" class="hidden" accept=".csv" onchange="importCSV(event)">
+                </label>
+                <button onclick="toggleModal('addModal')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                    <i class="fas fa-plus"></i> New Application
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="text-gray-500 text-sm mb-1">Total Applications</div>
+                <div id="statTotal" class="text-2xl font-bold">0</div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="text-blue-500 text-sm mb-1">Applied</div>
+                <div id="statApplied" class="text-2xl font-bold">0</div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="text-purple-500 text-sm mb-1">Interviews</div>
+                <div id="statInterviews" class="text-2xl font-bold">0</div>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="text-green-500 text-sm mb-1">Offers</div>
+                <div id="statOffers" class="text-2xl font-bold">0</div>
+            </div>
+        </div>
+
+        <!-- Search & Filter -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-4 items-center">
+            <div class="flex-grow">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="searchInput" oninput="renderApp()" placeholder="Search company, role, location..." class="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
+            <select id="statusFilter" onchange="renderApp()" class="border rounded-lg px-4 py-2 bg-white outline-none">
+                <option value="All">All Status</option>
+                <option value="Applied">Applied</option>
+                <option value="Screening">Screening</option>
+                <option value="Interview">Interview</option>
+                <option value="Offer">Offer</option>
+                <option value="Rejected">Rejected</option>
+            </select>
+            <select id="modeFilter" onchange="renderApp()" class="border rounded-lg px-4 py-2 bg-white outline-none">
+                <option value="All">All Work Modes</option>
+                <option value="Onsite">Onsite</option>
+                <option value="Hybrid">Hybrid</option>
+                <option value="Remote">Remote</option>
+            </select>
+        </div>
+
+        <!-- Main View Tabs -->
+        <div class="flex gap-8 mb-6 border-b">
+            <button onclick="setView('table')" id="btnViewTable" class="pb-3 px-2 font-medium tab-active">Table View</button>
+            <button onclick="setView('board')" id="btnViewBoard" class="pb-3 px-2 font-medium text-gray-500">Pipeline Board</button>
+        </div>
+
+        <!-- Content Area -->
+        <div id="mainContent">
+            <!-- Table View -->
+            <div id="tableView" class="overflow-x-auto bg-white rounded-xl shadow-sm border">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-50 border-b">
+                        <tr>
+                            <th class="px-6 py-4 font-semibold text-gray-700">Company & Role</th>
+                            <th class="px-6 py-4 font-semibold text-gray-700">Location</th>
+                            <th class="px-6 py-4 font-semibold text-gray-700">Status</th>
+                            <th class="px-6 py-4 font-semibold text-gray-700">Applied Date</th>
+                            <th class="px-6 py-4 font-semibold text-gray-700">Priority</th>
+                            <th class="px-6 py-4 font-semibold text-gray-700">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="appTableBody">
+                        <!-- Content via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Board View -->
+            <div id="boardView" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Columns via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="addModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b flex justify-between items-center sticky top-0 bg-white">
+                <h2 class="text-xl font-bold">New Application</h2>
+                <button onclick="toggleModal('addModal')" class="text-gray-400 hover:text-gray-600"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="appForm" onsubmit="saveApplication(event)" class="p-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Company *</label>
+                        <input type="text" name="company" required class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Role *</label>
+                        <input type="text" name="role" required class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
+                        <input type="text" name="city" class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                        <input type="text" name="country" class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Work Mode</label>
+                        <select name="workMode" class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="Onsite">Onsite</option>
+                            <option value="Hybrid">Hybrid</option>
+                            <option value="Remote">Remote</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select name="status" class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="Applied">Applied</option>
+                            <option value="Screening">Screening</option>
+                            <option value="Interview">Interview</option>
+                            <option value="Offer">Offer</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Applied Date</label>
+                        <input type="date" name="appliedDate" class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                        <select name="priority" class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="Low">Low</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Job Link</label>
+                    <input type="url" name="link" class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                    <textarea name="notes" rows="3" class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-4">
+                    <button type="button" onclick="toggleModal('addModal')" class="px-6 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let applications = JSON.parse(localStorage.getItem('jobApplications')) || [];
+        let currentView = 'table';
+
+        function saveApplication(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const app = Object.fromEntries(formData.entries());
+            app.id = Date.now();
+            app.appliedDate = app.appliedDate || new Date().toISOString().split('T')[0];
+            
+            applications.push(app);
+            updateStorage();
+            e.target.reset();
+            toggleModal('addModal');
+            renderApp();
+        }
+
+        function deleteApp(id) {
+            if (confirm('Are you sure you want to delete this application?')) {
+                applications = applications.filter(a => a.id !== id);
+                updateStorage();
+                renderApp();
+            }
+        }
+
+        function updateStorage() {
+            localStorage.setItem('jobApplications', JSON.stringify(applications));
+        }
+
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.toggle('hidden');
+        }
+
+        function setView(view) {
+            currentView = view;
+            document.getElementById('tableView').classList.toggle('hidden', view !== 'table');
+            document.getElementById('boardView').classList.toggle('hidden', view !== 'board');
+            document.getElementById('btnViewTable').classList.toggle('tab-active', view === 'table');
+            document.getElementById('btnViewTable').classList.toggle('text-gray-500', view !== 'table');
+            document.getElementById('btnViewBoard').classList.toggle('tab-active', view === 'board');
+            document.getElementById('btnViewBoard').classList.toggle('text-gray-500', view !== 'board');
+            renderApp();
+        }
+
+        function renderApp() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const modeFilter = document.getElementById('modeFilter').value;
+
+            const filtered = applications.filter(app => {
+                const matchesSearch = app.company.toLowerCase().includes(searchTerm) || 
+                                     app.role.toLowerCase().includes(searchTerm) || 
+                                     app.country.toLowerCase().includes(searchTerm);
+                const matchesStatus = statusFilter === 'All' || app.status === statusFilter;
+                const matchesMode = modeFilter === 'All' || app.workMode === modeFilter;
+                return matchesSearch && matchesStatus && matchesMode;
+            });
+
+            // Update Stats
+            document.getElementById('statTotal').innerText = applications.length;
+            document.getElementById('statApplied').innerText = applications.filter(a => a.status === 'Applied').length;
+            document.getElementById('statInterviews').innerText = applications.filter(a => a.status === 'Interview').length;
+            document.getElementById('statOffers').innerText = applications.filter(a => a.status === 'Offer').length;
+
+            if (currentView === 'table') {
+                const tbody = document.getElementById('appTableBody');
+                tbody.innerHTML = filtered.map(app => `
+                    <tr class="border-b hover:bg-gray-50 transition-colors">
+                        <td class="px-6 py-4">
+                            <div class="font-bold text-gray-800">${app.company}</div>
+                            <div class="text-sm text-gray-500">${app.role}</div>
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            <div class="flex items-center gap-1"><i class="fas fa-map-marker-alt text-gray-400"></i> ${app.city}, ${app.country}</div>
+                            <div class="text-xs text-gray-400 mt-1">${app.workMode}</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="status-badge status-${app.status.toLowerCase()}">${app.status}</span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${app.appliedDate}</td>
+                        <td class="px-6 py-4">
+                            <span class="text-xs font-medium px-2 py-0.5 rounded border border-gray-200">${app.priority}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex gap-2 justify-end">
+                                ${app.link ? `<a href="${app.link}" target="_blank" class="text-blue-500 hover:text-blue-700"><i class="fas fa-external-link-alt"></i></a>` : ''}
+                                <button onclick="deleteApp(${app.id})" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `).join('') || '<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">No applications found. Click "New Application" to start.</td></tr>';
+            } else {
+                const board = document.getElementById('boardView');
+                const stages = ['Applied', 'Screening', 'Interview', 'Offer'];
+                board.innerHTML = stages.map(stage => `
+                    <div class="bg-gray-100 p-4 rounded-xl min-h-[500px]">
+                        <h3 class="font-bold mb-4 flex justify-between items-center">
+                            ${stage}
+                            <span class="bg-white text-xs px-2 py-1 rounded-full shadow-sm">${filtered.filter(a => a.status === stage).length}</span>
+                        </h3>
+                        <div class="space-y-3">
+                            ${filtered.filter(a => a.status === stage).map(app => `
+                                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                    <div class="font-bold text-sm">${app.company}</div>
+                                    <div class="text-xs text-gray-500 mb-2">${app.role}</div>
+                                    <div class="flex justify-between items-center text-[10px] text-gray-400">
+                                        <span>${app.country}</span>
+                                        <span>${app.appliedDate}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function exportCSV() {
+            if (applications.length === 0) return alert('No data to export.');
+            const headers = Object.keys(applications[0]);
+            const rows = applications.map(app => headers.map(h => `"${app[h] || ''}"`).join(','));
+            const csv = [headers.join(','), ...rows].join('
+');
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `job_applications_${new Date().toISOString().split('T')[0]}.csv`);
+            a.click();
+        }
+
+        function importCSV(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const text = event.target.result;
+                const [headerLine, ...lines] = text.split('
+');
+                const headers = headerLine.split(',').map(h => h.replace(/"/g, '').trim());
+                
+                const imported = lines.filter(l => l.trim()).map(line => {
+                    const values = line.split(',').map(v => v.replace(/"/g, '').trim());
+                    return headers.reduce((obj, header, i) => {
+                        obj[header] = values[i];
+                        return obj;
+                    }, {});
+                });
+
+                if (confirm(`Replace current data with ${imported.length} applications from CSV?`)) {
+                    applications = imported.map(app => ({...app, id: app.id ? parseInt(app.id) : Date.now() + Math.random()}));
+                    updateStorage();
+                    renderApp();
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Initial Load
+        renderApp();
+    </script>
+</body>
+</html>
