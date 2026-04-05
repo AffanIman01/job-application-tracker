@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Application Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-4 md:p-8">
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+        <h1 class="text-3xl font-bold mb-6 text-gray-800">Job Application Tracker</h1>
+        <form onsubmit="save(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <input type="text" id="co" placeholder="Company Name" required class="border p-2 rounded w-full">
+            <input type="text" id="ro" placeholder="Role / Position" required class="border p-2 rounded w-full">
+            <input type="text" id="lo" placeholder="Location (e.g. Remote, KL, Penang)" required class="border p-2 rounded w-full">
+            <select id="st" class="border p-2 rounded w-full">
+                <option value="Applied">Applied</option>
+                <option value="Interview">Interview</option>
+                <option value="Offer">Offer</option>
+                <option value="Rejected">Rejected</option>
+            </select>
+            <div class="md:col-span-2">
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700 transition">Add Application</button>
+            </div>
+        </form>
+        <div class="flex gap-2 mb-6">
+            <button onclick="exportCSV()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Export CSV</button>
+            <label class="bg-yellow-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-yellow-700">
+                Import CSV
+                <input type="file" id="csvFile" accept=".csv" class="hidden" onchange="importCSV(event)">
+            </label>
+            <button onclick="clearAll()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 ml-auto">Clear All</button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-200">
+                        <th class="p-3 border">Company</th>
+                        <th class="p-3 border">Role</th>
+                        <th class="p-3 border">Location</th>
+                        <th class="p-3 border">Status</th>
+                        <th class="p-3 border">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="list"></tbody>
+            </table>
+        </div>
+    </div>
+    <script>
+        let apps = JSON.parse(localStorage.getItem('apps')) || [];
+        function save(e) {
+            e.preventDefault();
+            const app = {
+                co: document.getElementById('co').value,
+                ro: document.getElementById('ro').value,
+                lo: document.getElementById('lo').value,
+                st: document.getElementById('st').value,
+                id: Date.now()
+            };
+            apps.push(app);
+            update();
+            e.target.reset();
+        }
+        function update() {
+            localStorage.setItem('apps', JSON.stringify(apps));
+            render();
+        }
+        function render() {
+            const list = document.getElementById('list');
+            list.innerHTML = apps.map(a => \`
+                <tr class="hover:bg-gray-50">
+                    <td class="p-3 border">\${a.co}</td>
+                    <td class="p-3 border">\${a.ro}</td>
+                    <td class="p-3 border">\${a.lo}</td>
+                    <td class="p-3 border">
+                        <span class="px-2 py-1 rounded text-sm \${getStatusClass(a.st)}">\${a.st}</span>
+                    </td>
+                    <td class="p-3 border text-center">
+                        <button onclick="remove(\${a.id})" class="text-red-500 hover:text-red-700">Delete</button>
+                    </td>
+                </tr>
+            \`).join('');
+        }
+        function getStatusClass(st) {
+            if (st === 'Applied') return 'bg-blue-100 text-blue-800';
+            if (st === 'Interview') return 'bg-yellow-100 text-yellow-800';
+            if (st === 'Offer') return 'bg-green-100 text-green-800';
+            return 'bg-red-100 text-red-800';
+        }
+        function remove(id) {
+            apps = apps.filter(a => a.id !== id);
+            update();
+        }
+        function clearAll() {
+            if (confirm('Clear all entries?')) {
+                apps = [];
+                update();
+            }
+        }
+        function exportCSV() {
+            let csv = "Company,Role,Location,Status\
+";
+            apps.forEach(a => {
+                csv += \`"\${a.co}","\${a.ro}","\${a.lo}","\${a.st}"\
+\`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'job_applications.csv';
+            a.click();
+        }
+        function importCSV(e) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const text = event.target.result;
+                const rows = text.split('\
+').slice(1);
+                rows.forEach(row => {
+                    const cols = row.split(',').map(c => c.replace(/"/g, '').trim());
+                    if (cols.length >= 4) {
+                        apps.push({ co: cols[0], ro: cols[1], lo: cols[2], st: cols[3], id: Date.now() + Math.random() });
+                    }
+                });
+                update();
+            };
+            reader.readAsText(file);
+        }
+        render();
+    </script>
+</body>
+</html>
