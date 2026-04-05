@@ -13,11 +13,12 @@
         .status-interview { background-color: #f3e8ff; color: #6b21a8; }
         .status-offer { background-color: #dcfce7; color: #166534; }
         .status-rejected { background-color: #fee2e2; color: #991b1b; }
-        .tab-active { border-bottom-width: 2px; border-color: #2563eb; color: #2563eb; }
+        .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
     <div id="app" class="container mx-auto px-4 py-8">
+        <!-- Header -->
         <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
             <div>
                 <h1 class="text-3xl font-bold text-gray-800">Job Application Tracker</h1>
@@ -37,6 +38,7 @@
             </div>
         </div>
 
+        <!-- Dashboard Stats -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <div class="text-gray-500 text-sm mb-1">Total Applications</div>
@@ -56,6 +58,7 @@
             </div>
         </div>
 
+        <!-- Search & Filter -->
         <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-4 items-center">
             <div class="flex-grow">
                 <div class="relative">
@@ -79,11 +82,13 @@
             </select>
         </div>
 
+        <!-- View Tabs -->
         <div class="flex gap-8 mb-6 border-b">
             <button onclick="setView('table')" id="btnViewTable" class="pb-3 px-2 font-medium tab-active">Table View</button>
             <button onclick="setView('board')" id="btnViewBoard" class="pb-3 px-2 font-medium text-gray-500">Pipeline Board</button>
         </div>
 
+        <!-- Content Area -->
         <div id="mainContent">
             <div id="tableView" class="overflow-x-auto bg-white rounded-xl shadow-sm border">
                 <table class="w-full text-left">
@@ -104,7 +109,7 @@
         </div>
     </div>
 
-    <!-- Add/Edit Modal -->
+    <!-- Modal -->
     <div id="addModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b flex justify-between items-center sticky top-0 bg-white">
@@ -207,7 +212,9 @@
 
         function toggleModal(id) {
             const modal = document.getElementById(id);
-            modal.classList.toggle('hidden');
+            if (modal) {
+                modal.classList.toggle('hidden');
+            }
         }
 
         function setView(view) {
@@ -242,45 +249,47 @@
 
             if (currentView === 'table') {
                 const tbody = document.getElementById('appTableBody');
+                if (!tbody) return;
                 tbody.innerHTML = filtered.map(app => `
                     <tr class="border-b hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4">
-                            <div class="font-bold text-gray-800">\${app.company}</div>
-                            <div class="text-sm text-gray-500">\${app.role}</div>
+                            <div class="font-bold text-gray-800">${app.company}</div>
+                            <div class="text-sm text-gray-500">${app.role}</div>
                         </td>
                         <td class="px-6 py-4 text-sm">
-                            <div class="flex items-center gap-1"><i class="fas fa-map-marker-alt text-gray-400"></i> \${app.city}, \${app.country}</div>
-                            <div class="text-xs text-gray-400 mt-1">\${app.workMode}</div>
+                            <div class="flex items-center gap-1"><i class="fas fa-map-marker-alt text-gray-400"></i> ${app.city}, ${app.country}</div>
+                            <div class="text-xs text-gray-400 mt-1">${app.workMode}</div>
                         </td>
                         <td class="px-6 py-4">
-                            <span class="status-badge status-\${app.status.toLowerCase()}">\${app.status}</span>
+                            <span class="status-badge status-${app.status.toLowerCase()}">${app.status}</span>
                         </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">\${app.appliedDate}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${app.appliedDate}</td>
                         <td class="px-6 py-4">
-                            <span class="text-xs font-medium px-2 py-0.5 rounded border border-gray-200">\${app.priority}</span>
+                            <span class="text-xs font-medium px-2 py-0.5 rounded border border-gray-200">${app.priority}</span>
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="flex gap-2 justify-end">
-                                \${app.link ? `<a href="\${app.link}" target="_blank" class="text-blue-500 hover:text-blue-700"><i class="fas fa-external-link-alt"></i></a>` : ''}
-                                <button onclick="deleteApp(\${app.id})" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
+                                ${app.link ? `<a href="${app.link}" target="_blank" class="text-blue-500 hover:text-blue-700"><i class="fas fa-external-link-alt"></i></a>` : ''}
+                                <button onclick="deleteApp(${app.id})" class="text-red-400 hover:text-red-600"><i class="fas fa-trash"></i></button>
                             </div>
                         </td>
                     </tr>
                 `).join('') || '<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">No applications found.</td></tr>';
             } else {
                 const board = document.getElementById('boardView');
+                if (!board) return;
                 const stages = ['Applied', 'Screening', 'Interview', 'Offer'];
                 board.innerHTML = stages.map(stage => `
                     <div class="bg-gray-100 p-4 rounded-xl min-h-[500px]">
-                        <h3 class="font-bold mb-4 flex justify-between items-center">\${stage} <span class="bg-white text-xs px-2 py-1 rounded-full shadow-sm">\${filtered.filter(a => a.status === stage).length}</span></h3>
+                        <h3 class="font-bold mb-4 flex justify-between items-center">${stage} <span class="bg-white text-xs px-2 py-1 rounded-full shadow-sm">${filtered.filter(a => a.status === stage).length}</span></h3>
                         <div class="space-y-3">
-                            \${filtered.filter(a => a.status === stage).map(app => `
+                            ${filtered.filter(a => a.status === stage).map(app => `
                                 <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-                                    <div class="font-bold text-sm">\${app.company}</div>
-                                    <div class="text-xs text-gray-500 mb-2">\${app.role}</div>
+                                    <div class="font-bold text-sm">${app.company}</div>
+                                    <div class="text-xs text-gray-500 mb-2">${app.role}</div>
                                     <div class="flex justify-between items-center text-[10px] text-gray-400">
-                                        <span>\${app.country}</span>
-                                        <span>\${app.appliedDate}</span>
+                                        <span>${app.country}</span>
+                                        <span>${app.appliedDate}</span>
                                     </div>
                                 </div>
                             `).join('')}
@@ -293,14 +302,14 @@
         function exportCSV() {
             if (applications.length === 0) return alert('No data to export.');
             const headers = Object.keys(applications[0]);
-            const rows = applications.map(app => headers.map(h => `"\${app[h] || ''}"`).join(','));
-            const csv = [headers.join(','), ...rows].join('\
+            const rows = applications.map(app => headers.map(h => `"${app[h] || ''}"`).join(','));
+            const csv = [headers.join(','), ...rows].join('
 ');
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.setAttribute('href', url);
-            a.setAttribute('download', \`job_applications_\${new Date().toISOString().split('T')[0]}.csv\`);
+            a.setAttribute('download', `job_applications_${new Date().toISOString().split('T')[0]}.csv`);
             a.click();
         }
 
@@ -310,14 +319,16 @@
             const reader = new FileReader();
             reader.onload = (event) => {
                 const text = event.target.result;
-                const [headerLine, ...lines] = text.split('\
+                const lines = text.split('
 ');
+                if (lines.length < 2) return;
+                const headerLine = lines[0];
                 const headers = headerLine.split(',').map(h => h.replace(/"/g, '').trim());
-                const imported = lines.filter(l => l.trim()).map(line => {
+                const imported = lines.slice(1).filter(l => l.trim()).map(line => {
                     const values = line.split(',').map(v => v.replace(/"/g, '').trim());
                     return headers.reduce((obj, header, i) => { obj[header] = values[i]; return obj; }, {});
                 });
-                if (confirm(\`Replace current data with \${imported.length} applications from CSV?\`)) {
+                if (confirm(`Replace current data with ${imported.length} applications from CSV?`)) {
                     applications = imported.map(app => ({...app, id: app.id ? parseInt(app.id) : Date.now() + Math.random()}));
                     updateStorage();
                     renderApp();
