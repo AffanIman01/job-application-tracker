@@ -3,126 +3,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Job Application Tracker</title>
+    <title>Job Application Tracker Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen p-4 md:p-8">
-    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
-        <h1 class="text-3xl font-bold mb-6 text-gray-800">Job Application Tracker</h1>
-        <form onsubmit="save(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <input type="text" id="co" placeholder="Company Name" required class="border p-2 rounded w-full">
-            <input type="text" id="ro" placeholder="Role / Position" required class="border p-2 rounded w-full">
-            <input type="text" id="lo" placeholder="Location (e.g. Remote, KL, Penang)" required class="border p-2 rounded w-full">
-            <select id="st" class="border p-2 rounded w-full">
-                <option value="Applied">Applied</option>
-                <option value="Interview">Interview</option>
-                <option value="Offer">Offer</option>
-                <option value="Rejected">Rejected</option>
-            </select>
-            <div class="md:col-span-2">
-                <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 rounded hover:bg-blue-700 transition">Add Application</button>
+<body class="bg-gray-50 min-h-screen p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-8">
+            <h1 class="text-3xl font-extrabold mb-6 text-gray-900 border-b pb-4">Job Search Command Center</h1>
+            <form onsubmit="save(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <input type="text" id="co" placeholder="Company Name" required class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="text" id="ro" placeholder="Role / Position" required class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="text" id="lo" placeholder="Location (e.g. Penang, Remote)" required class="border p-3 rounded-lg w-full focus:ring-2 focus:ring-blue-500 outline-none">
+                <select id="st" class="border p-3 rounded-lg w-full bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="Applied">Applied</option>
+                    <option value="Interview">Interviewing</option>
+                    <option value="Offer">Offer Received</option>
+                    <option value="Rejected">Not Selected</option>
+                </select>
+                <div class="md:col-span-4">
+                    <button type="submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 shadow-lg transition">Add New Application</button>
+                </div>
+            </form>
+            <div class="flex flex-wrap gap-3 mb-6 items-center">
+                <button onclick="exportCSV()" class="bg-emerald-600 text-white px-5 py-2.5 rounded-lg hover:bg-emerald-700 font-medium transition flex items-center gap-2">Export CSV</button>
+                <label class="bg-amber-600 text-white px-5 py-2.5 rounded-lg cursor-pointer hover:bg-amber-700 font-medium transition flex items-center gap-2">
+                    Import CSV
+                    <input type="file" id="csvFile" accept=".csv" class="hidden" onchange="importCSV(event)">
+                </label>
+                <button onclick="clearAll()" class="text-gray-500 hover:text-red-600 font-medium ml-auto transition">Clear Database</button>
             </div>
-        </form>
-        <div class="flex gap-2 mb-6">
-            <button onclick="exportCSV()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Export CSV</button>
-            <label class="bg-yellow-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-yellow-700">
-                Import CSV
-                <input type="file" id="csvFile" accept=".csv" class="hidden" onchange="importCSV(event)">
-            </label>
-            <button onclick="clearAll()" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 ml-auto">Clear All</button>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-gray-200">
-                        <th class="p-3 border">Company</th>
-                        <th class="p-3 border">Role</th>
-                        <th class="p-3 border">Location</th>
-                        <th class="p-3 border">Status</th>
-                        <th class="p-3 border">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="list"></tbody>
-            </table>
+        <div class="flex border-b mb-6 gap-8">
+            <button onclick="setView('table')" id="btn-table" class="pb-3 border-b-2 border-blue-600 text-blue-600 font-bold">List View</button>
+            <button onclick="setView('board')" id="btn-board" class="pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium">Pipeline Board</button>
+        </div>
+        <div id="view-table" class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-700 uppercase text-xs font-bold tracking-wider">
+                            <th class="p-4 border-b">Company</th>
+                            <th class="p-4 border-b">Role</th>
+                            <th class="p-4 border-b">Location</th>
+                            <th class="p-4 border-b">Status</th>
+                            <th class="p-4 border-b text-right text-gray-400">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="list" class="divide-y divide-gray-100"></tbody>
+                </table>
+            </div>
+        </div>
+        <div id="view-board" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-gray-100 p-4 rounded-xl min-h-[500px]">
+                <h3 class="font-bold text-blue-700 mb-4 flex justify-between">Applied <span id="count-applied" class="bg-blue-200 text-blue-800 px-2 rounded-full text-xs">0</span></h3>
+                <div id="board-Applied" class="space-y-3"></div>
+            </div>
+            <div class="bg-gray-100 p-4 rounded-xl min-h-[500px]">
+                <h3 class="font-bold text-yellow-700 mb-4 flex justify-between">Interviewing <span id="count-interview" class="bg-yellow-200 text-yellow-800 px-2 rounded-full text-xs">0</span></h3>
+                <div id="board-Interview" class="space-y-3"></div>
+            </div>
+            <div class="bg-gray-100 p-4 rounded-xl min-h-[500px]">
+                <h3 class="font-bold text-green-700 mb-4 flex justify-between">Offers <span id="count-offer" class="bg-green-200 text-green-800 px-2 rounded-full text-xs">0</span></h3>
+                <div id="board-Offer" class="space-y-3"></div>
+            </div>
+            <div class="bg-gray-100 p-4 rounded-xl min-h-[500px]">
+                <h3 class="font-bold text-red-700 mb-4 flex justify-between">Rejected <span id="count-rejected" class="bg-red-200 text-red-800 px-2 rounded-full text-xs">0</span></h3>
+                <div id="board-Rejected" class="space-y-3"></div>
+            </div>
         </div>
     </div>
     <script>
         let apps = JSON.parse(localStorage.getItem('apps')) || [];
-        function save(e) {
-            e.preventDefault();
-            const app = {
-                co: document.getElementById('co').value,
-                ro: document.getElementById('ro').value,
-                lo: document.getElementById('lo').value,
-                st: document.getElementById('st').value,
-                id: Date.now()
-            };
-            apps.push(app);
-            update();
-            e.target.reset();
-        }
-        function update() {
-            localStorage.setItem('apps', JSON.stringify(apps));
+        let currentView = 'table';
+        function setView(v) {
+            currentView = v;
+            document.getElementById('view-table').classList.toggle('hidden', v !== 'table');
+            document.getElementById('view-board').classList.toggle('hidden', v !== 'board');
+            document.getElementById('btn-table').className = v === 'table' ? 'pb-3 border-b-2 border-blue-600 text-blue-600 font-bold' : 'pb-3 border-b-2 border-transparent text-gray-500 font-medium';
+            document.getElementById('btn-board').className = v === 'board' ? 'pb-3 border-b-2 border-blue-600 text-blue-600 font-bold' : 'pb-3 border-b-2 border-transparent text-gray-500 font-medium';
             render();
         }
-        function render() {
+        function save(e) {
+            e.preventDefault();
+            const app = { co: document.getElementById('co').value, ro: document.getElementById('ro').value, lo: document.getElementById('lo').value, st: document.getElementById('st').value, id: Date.now() };
+            apps.push(app); update(); e.target.reset();
+        }
+        function update() { localStorage.setItem('apps', JSON.stringify(apps)); render(); }
+        function render() { if (currentView === 'table') renderTable(); else renderBoard(); }
+        function renderTable() {
             const list = document.getElementById('list');
             list.innerHTML = apps.map(a => \`
-                <tr class="hover:bg-gray-50">
-                    <td class="p-3 border">\${a.co}</td>
-                    <td class="p-3 border">\${a.ro}</td>
-                    <td class="p-3 border">\${a.lo}</td>
-                    <td class="p-3 border">
-                        <span class="px-2 py-1 rounded text-sm \${getStatusClass(a.st)}">\${a.st}</span>
-                    </td>
-                    <td class="p-3 border text-center">
-                        <button onclick="remove(\${a.id})" class="text-red-500 hover:text-red-700">Delete</button>
-                    </td>
+                <tr class="hover:bg-blue-50 transition">
+                    <td class="p-4 font-bold text-gray-800">\${a.co}</td>
+                    <td class="p-4 text-gray-600">\${a.ro}</td>
+                    <td class="p-4 text-gray-500">\${a.lo}</td>
+                    <td class="p-4"><span class="px-3 py-1 rounded-full text-xs font-bold \${getStatusClass(a.st)}">\${a.st}</span></td>
+                    <td class="p-4 text-right"><button onclick="remove(\${a.id})" class="text-red-400 hover:text-red-600 transition p-2">Delete</button></td>
                 </tr>
             \`).join('');
         }
+        function renderBoard() {
+            const statuses = ['Applied', 'Interview', 'Offer', 'Rejected'];
+            statuses.forEach(s => {
+                const container = document.getElementById(\`board-\${s}\`);
+                const filtered = apps.filter(a => a.st === s);
+                container.innerHTML = filtered.map(a => \`
+                    <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 \${getBorderColor(s)} hover:shadow-md transition">
+                        <div class="font-bold text-gray-900">\${a.co}</div>
+                        <div class="text-sm text-gray-600">\${a.ro}</div>
+                        <div class="text-xs text-gray-400 mt-2">\${a.lo}</div>
+                    </div>
+                \`).join('');
+                document.getElementById(\`count-\${s.toLowerCase()}\`).innerText = filtered.length;
+            });
+        }
         function getStatusClass(st) {
-            if (st === 'Applied') return 'bg-blue-100 text-blue-800';
-            if (st === 'Interview') return 'bg-yellow-100 text-yellow-800';
-            if (st === 'Offer') return 'bg-green-100 text-green-800';
-            return 'bg-red-100 text-red-800';
+            if (st === 'Applied') return 'bg-blue-100 text-blue-700';
+            if (st === 'Interview') return 'bg-yellow-100 text-yellow-700';
+            if (st === 'Offer') return 'bg-green-100 text-green-700';
+            return 'bg-red-100 text-red-700';
         }
-        function remove(id) {
-            apps = apps.filter(a => a.id !== id);
-            update();
+        function getBorderColor(st) {
+            if (st === 'Applied') return 'border-blue-500';
+            if (st === 'Interview') return 'border-yellow-500';
+            if (st === 'Offer') return 'border-green-500';
+            return 'border-red-500';
         }
-        function clearAll() {
-            if (confirm('Clear all entries?')) {
-                apps = [];
-                update();
-            }
-        }
+        function remove(id) { if(confirm('Delete?')) { apps = apps.filter(a => a.id !== id); update(); } }
+        function clearAll() { if (confirm('Clear all?')) { apps = []; update(); } }
         function exportCSV() {
             let csv = "Company,Role,Location,Status\
 ";
-            apps.forEach(a => {
-                csv += \`"\${a.co}","\${a.ro}","\${a.lo}","\${a.st}"\
-\`;
-            });
+            apps.forEach(a => { csv += \`"\${a.co}","\${a.ro}","\${a.lo}","\${a.st}"\
+\`; });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'job_applications.csv';
-            a.click();
+            const a = document.createElement('a'); a.href = url; a.download = 'job_tracker.csv'; a.click();
         }
         function importCSV(e) {
-            const file = e.target.files[0];
-            const reader = new FileReader();
+            const file = e.target.files[0]; const reader = new FileReader();
             reader.onload = function(event) {
-                const text = event.target.result;
-                const rows = text.split('\
+                const rows = event.target.result.split('\
 ').slice(1);
                 rows.forEach(row => {
                     const cols = row.split(',').map(c => c.replace(/"/g, '').trim());
-                    if (cols.length >= 4) {
-                        apps.push({ co: cols[0], ro: cols[1], lo: cols[2], st: cols[3], id: Date.now() + Math.random() });
-                    }
+                    if (cols.length >= 4) apps.push({ co: cols[0], ro: cols[1], lo: cols[2], st: cols[3], id: Date.now() + Math.random() });
                 });
                 update();
             };
